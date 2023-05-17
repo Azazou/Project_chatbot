@@ -5,7 +5,7 @@ const nltk = require('nltk');
 const { word_tokenize, pos_tag } = require('nltk');
 const runSample = require('./chatbot-helper.js')
 
-const { PROJECT_ID } = process.env;
+const { PROJECT_ID, OPENWEATHERMAP_APIKEY, MOVIEDB_APIKEY } = process.env;
 
 // const WIKIPEDIA_API_URL = 'https://fr.wikipedia.org/w/api.php';
 
@@ -64,13 +64,53 @@ const { PROJECT_ID } = process.env;
 app.get('/', (req, res) => {
 
     runSample.runSample(PROJECT_ID, req.query.message)
-    .then((data) => {
-      res.send(data); // .fulfillmentText
-  
-    })
-    .catch((err) => console.log(err));
-  })
+        .then((data) => {
+            res.send(data); // .fulfillmentText
+        })
+        .catch((err) => console.log(err));
+});
+
+app.get('/meteo', (req, res) => {
+
+    runSample.runSample(PROJECT_ID, req.query.message)
+        .then((data) => {
+            //res.send(data);
+            
+
+        })
+        .catch((err) => console.log(err));
+});
+
+async function getMovies(name) {
+    const response = await axios.get("https://api.themoviedb.org/3/search/movie?api_key=757d2e8a63e45b8eec2c696cd8edca74&query=" + name)
+    return response.data;
+}
+
+app.get('/movie', (req, res) => {
+
+    runSample.runSample(PROJECT_ID, req.query.message)
+        .then((data) => {
+            //res.send(data);
+            console.log(data.parameters.fields.name.stringValue);
+            if (data.parameters.fields.name.stringValue != "") {
+                axios({
+                    method: 'get',
+                    url: "https://api.themoviedb.org/3/search/movie?api_key=757d2e8a63e45b8eec2c696cd8edca74&query=" + data.parameters.fields.name.stringValue
+                }).then(function (response) {
+                    console.log(response.data);
+                    res.send("Si je ne me trompe pas ce film est sortie à cette date: " + response.data.results[0].release_date);
+                  });
+            
+                
+                
+            } else {
+                res.send("Je n'ai pas compris, de quel film parlez-vous ?");
+            }
+
+        })
+        .catch((err) => console.log(err));
+});
 
 app.listen(3000, () => {
-  console.log('Le serveur est en écoute sur le port 3000...');
+    console.log('Le serveur est en écoute sur le port 3000...');
 });
